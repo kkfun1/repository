@@ -1,0 +1,47 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+apply from: "${project.rootProject.file('apply.gradle')}"
+
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+        classpath 'org.greenrobot:greendao-gradle-plugin:3.2.1'
+        classpath 'com.droidtitan:lint-cleaner-plugin:0.3.0'    // 清除无用资源插件
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
+}
+
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("lint")
+//如果instant run不生效，把clean这行干掉
+            //||task.name.equals("clean")
+//如果项目中有用到aidl则不可以舍弃这个任务
+            ||task.name.contains("Aidl")
+//用不到测试的时候就可以先关闭
+            ||task.name.contains("mockableAndroidJar")
+            ||task.name.contains("UnitTest")
+            ||task.name.contains("AndroidTest")
+//用不到NDK和JNI的也关闭掉
+            || task.name.contains("Ndk")
+            || task.name.contains("Jni")
+    ) {
+        task.enabled = false
+    }
+}

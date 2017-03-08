@@ -1,0 +1,111 @@
+apply plugin: 'com.android.application'
+apply plugin: 'android-apt'
+apply plugin: 'org.greenrobot.greendao'
+
+String[] channelValues = rootProject.ext.channel.CHANNEL_LIST.split(",")
+
+android {
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
+    buildToolsVersion rootProject.ext.android.buildToolsVersion
+    defaultConfig {
+        applicationId rootProject.ext.android.applicationId
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        versionCode rootProject.ext.android.versionCode
+        versionName rootProject.ext.android.versionName
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [UMENG_CHANNEL_VALUE: rootProject.ext.channel.DEFAULT,
+                                EASEMOB_APP_VALUE  : rootProject.ext.third.EASEMOB_APP_DEBUG_VALUE]
+        //默认渠道
+        ndk {
+            abiFilters 'armeabi', 'armeabi-v7a', 'x86' //, 'x86_64', 'mips', 'armeabi-v8a'
+
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'   // aar目录
+        }
+    }
+
+    greendao {
+        schemaVersion 2 //数据库schema版本，也可以理解为数据库版本号
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("../key.jks")
+            storePassword rootProject.ext.android.keystorePassword
+            keyAlias rootProject.ext.android.keystoreAlias
+            keyPassword rootProject.ext.android.keystorePassword
+        }
+    }
+
+    productFlavors {
+        for (int i = 0; i < channelValues.size(); i++) {
+            String ch = channelValues[i]
+            "${ch}" {
+                manifestPlaceholders = [UMENG_CHANNEL_VALUE: ch]
+            }
+        }
+    }
+
+
+    buildTypes {
+        debug {
+            versionNameSuffix rootProject.ext.android.versionNameSuffix
+            buildConfigField "String", "HOST", "\"${rootProject.ext.url.debugBaseURL}\""
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            manifestPlaceholders = [EASEMOB_APP_VALUE   : rootProject.ext.third.EASEMOB_APP_RELEASE_VALUE]
+            buildConfigField "String", "HOST", "\"${rootProject.ext.url.releaseBaseURL}\""
+            minifyEnabled true
+            zipAlignEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        formatFinalResult(rootProject.ext.android.versionName, rootProject.ext.android.versionNameSuffix, applicationVariants)
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    meizuCompile('com.meizu.flyme.internet:push-internal-publish:3.3.170123', {
+        exclude group: 'com.squareup.okhttp3'
+    })
+
+    compile rootProject.ext.dependency.butterknifeLib
+    apt rootProject.ext.dependency.butterknifeAptLib
+    compile rootProject.ext.dependency.baseAdapterLib
+    compile rootProject.ext.dependency.supportRecyclerViewLib
+    compile  rootProject.ext.dependency.glideLib
+    compile rootProject.ext.dependency.roundedimageviewLib
+    compile rootProject.ext.dependency.eventbusLib
+    compile rootProject.ext.dependency.supportDesignLib
+    compile rootProject.ext.dependency.analyticsLib
+    compile rootProject.ext.dependency.flycoTabLayoutLib
+    compile rootProject.ext.dependency.greendaoLib
+    compile rootProject.ext.dependency.greendaoHelpLib
+    debugCompile rootProject.ext.dependency.stethoLib
+    debugCompile rootProject.ext.dependency.stethoHttpLib
+
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+
+
+}
+
